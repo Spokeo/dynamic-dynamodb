@@ -14,6 +14,12 @@ except ImportError:
 
 TABLE_CONFIG_OPTIONS = [
     {
+        'key': 'max_scale_down_ops_per_day',
+        'option': 'max-scale-down-ops-per-day',
+        'required': False,
+        'type': 'int'
+    },
+    {
         'key': 'enable_reads_autoscaling',
         'option': 'enable-reads-autoscaling',
         'required': False,

@@ -908,10 +908,13 @@ def __update_throughput(table_name, key_name, read_units, write_units):
 
     # Check table status
     try:
-        table_status = dynamodb.get_table_status(table_name)
+        table_status, table_desc = dynamodb.get_table_status(table_name)
     except JSONResponseError:
         raise
     logger.debug('{0} - Table status is {1}'.format(table_name, table_status))
+
+    # check if scaling down limits already reached.
+
     if table_status != 'ACTIVE':
         logger.warning(
             '{0} - Not performing throughput changes when table '
@@ -928,16 +931,20 @@ def __update_throughput(table_name, key_name, read_units, write_units):
             write_units,
             current_wu)
 
-        if read_units == current_ru and write_units == current_wu:
-            logger.info('{0} - No changes to perform'.format(table_name))
-            return
+    read_units, write_units = dynamodb.update_rate_by_check_scale_down_limits_per_day(
+        read_units, write_units, current_ru, current_wu,
+        get_table_option(key_name, 'max_scale_down_ops_per_day'),
+        table_desc[u'Table'][u'ProvisionedThroughput'][u'NumberOfDecreasesToday'])
+
+    if read_units == current_ru and write_units == current_wu:
+        logger.info('{0} - No changes to perform'.format(table_name))
+        return
 
     dynamodb.update_table_provisioning(
         table_name,
         key_name,
         int(read_units),
         int(write_units))
-
 
 def __ensure_provisioning_alarm(table_name, key_name):
     """ Ensure that provisioning alarm threshold is not exceeded
