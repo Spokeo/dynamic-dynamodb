@@ -1051,7 +1051,7 @@ def __update_throughput(
 
     # Check table status
     try:
-        gsi_status = dynamodb.get_gsi_status(table_name, gsi_name)
+        gsi_status, gsi_desc = dynamodb.get_gsi_status(table_name, gsi_name)
     except JSONResponseError:
         raise
 
@@ -1074,10 +1074,14 @@ def __update_throughput(
             write_units,
             current_wu)
 
-        if read_units == current_ru and write_units == current_wu:
-            logger.info('{0} - GSI: {1} - No changes to perform'.format(
-                table_name, gsi_name))
-            return
+    read_units, write_units = dynamodb.update_rate_by_check_scale_down_limits_per_day(
+        read_units, write_units, current_ru, current_wu,
+        get_gsi_option(table_key, gsi_key, 'max_scale_down_ops_per_day'),
+        gsi_desc[u'ProvisionedThroughput'][u'NumberOfDecreasesToday'])
+
+    if read_units == current_ru and write_units == current_wu:
+        logger.info('{0} - GSI: {1} - No changes to perform'.format(table_name, gsi_name))
+        return
 
     dynamodb.update_gsi_provisioning(
         table_name,
@@ -1086,7 +1090,6 @@ def __update_throughput(
         gsi_key,
         int(read_units),
         int(write_units))
-
 
 def __ensure_provisioning_alarm(table_name, table_key, gsi_name, gsi_key):
     """ Ensure that provisioning alarm threshold is not exceeded

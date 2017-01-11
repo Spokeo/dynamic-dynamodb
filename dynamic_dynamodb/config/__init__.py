@@ -35,6 +35,8 @@ DEFAULT_OPTIONS = {
         'log_config_file': None
     },
     'table': {
+        'max_scale_down_ops_per_day': 4,
+
         'reads-upper-alarm-threshold': 0,
         'reads-lower-alarm-threshold': 0,
         'writes-upper-alarm-threshold': 0,
