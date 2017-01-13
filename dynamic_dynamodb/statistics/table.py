@@ -10,6 +10,13 @@ from dynamic_dynamodb.log_handler import LOGGER as logger
 from dynamic_dynamodb.aws.cloudwatch import (
     CLOUDWATCH_CONNECTION as cloudwatch_connection)
 
+from dynamic_dynamodb.config_handler import get_global_option
+from boto.ec2 import cloudwatch
+
+
+from sys import stdin
+import dateutil.parser
+import json
 
 def get_consumed_read_units_percent(
         table_name, lookback_window_start=15, lookback_period=5):
@@ -376,3 +383,65 @@ def __get_aws_metric(table_name, lookback_window_start, lookback_period,
                 error.reason,
                 error.message))
         raise
+
+def __get_def_connection_cloudwatch():
+    """ Ensure connection to CloudWatch """
+    region = 'us-west-2'
+    try:
+        connection = cloudwatch.connect_to_region(region)
+    except Exception as err:
+        logger.error('Failed connecting to CloudWatch: {0}'.format(err))
+        logger.error(
+            'Please report an issue at: '
+            'https://github.com/sebdah/dynamic-dynamodb/issues')
+        raise
+    logger.debug('Connected to CloudWatch in {0}'.format(region))
+    return connection
+
+def __get_aws_metric_by_time(table_name, start_time, end_time, metric_name, metric_type, period_sec):
+    """ Returns a  metric list from the AWS CloudWatch service based on specific time frame.
+    """
+    try:
+        return __get_def_connection_cloudwatch().get_metric_statistics(
+            period=period_sec,
+            start_time=start_time,
+            end_time=end_time,
+            metric_name=metric_name,
+            namespace='AWS/DynamoDB',
+            statistics=[metric_type],
+            dimensions={'TableName': table_name},
+            unit='Count')
+    except BotoServerError as error:
+        logger.error(
+            'Unknown boto error. Status: "{0}". '
+            'Reason: "{1}". Message: {2}'.format(
+                error.status,
+                error.reason,
+                error.message))
+        raise
+
+if __name__ == '__main__':
+    for metric_info in stdin:
+        param = {}
+        dot_arr = []
+        metric_info = metric_info.rstrip(" \t\n\r").split(' ')
+        print '>>>> metrics for table: ', metric_info
+        for i, key in enumerate([ 'table_name', 'start_time', 'end_time', 'metric_name', 'metric_type', 'period_sec' ]):
+            if (i >= len(metric_info)): break
+            print key, ' ', i, ' ', metric_info[i]
+            param[key] = metric_info[i]
+        data_points = __get_aws_metric_by_time(
+            param['table_name'],
+            dateutil.parser.parse(param['start_time']),
+            dateutil.parser.parse(param['end_time']),
+            param['metric_name'],
+            param['metric_type'],
+            param['period_sec'])
+        for dot in sorted(data_points, key=lambda dt: dt['Timestamp']):
+            value_out = float(dot[param['metric_type']])
+            if ('Average' == param['metric_type']):
+                value_out = float(dot[param['metric_type']]) * 60
+            dot_arr.append({ 'Time' : str(dot['Timestamp']), 'Value' : int(value_out) })
+        for i, dot in enumerate(dot_arr):
+            if (i > 0): dot['Delta'] = str(int((float(dot['Value'] - dot_arr[i - 1]['Value']) / float(dot_arr[i - 1]['Value'])) * 100)) + "%"
+            print json.dumps(dot)

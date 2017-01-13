@@ -37,3 +37,5 @@ nosetests.xml
 node_modules
 
 .ropeproject
+
+log

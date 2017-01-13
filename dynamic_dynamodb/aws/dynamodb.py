@@ -79,11 +79,50 @@ def get_table(table_name):
         if dynamodb_error == 'ResourceNotFoundException':
             logger.error(
                 '{0} - Table {1} not found'.format(table_name, table_name))
-
         raise
 
     return table
 
+def update_rate_by_check_scale_down_limits_per_day(read_units, write_units,
+                                                   cur_reads_cap, cur_write_cap,
+                                                   max_decreses_per_day,
+                                                   num_of_decreses_today):
+    """ This will check to see if any intended decrement cap. exceed
+        limits(4 times a day by def)
+        :type table_desc: hash
+        :param table_desc: from dynamodb.get_table_status(table_name)
+        :type read_units: int
+        :type write_units: int
+    """
+
+    """ short circuit if change is a pure incremental process.
+    """
+    logger.debug('>>>> enter check limit, aleady down {0} times, limit is {1} | '
+                 'cur. reads {2} => {3} | cur. write {4} => {5}'.format(
+                     num_of_decreses_today, max_decreses_per_day,
+                     cur_reads_cap, read_units, cur_write_cap, write_units))
+    if ((cur_reads_cap <= read_units) and (cur_write_cap <= write_units)):
+        return read_units, write_units
+
+    if (num_of_decreses_today < max_decreses_per_day):
+        """ if action involved any decrements and we still be able to do it,
+            then keep the plan as it is
+        """
+        logger.debug('>>>> already down {0} times, limit is {1}, continue | '
+                     'cur. reads {2} => {3} | cur. write {4} => {5}'.format(
+                         num_of_decreses_today, max_decreses_per_day,
+                         cur_reads_cap, read_units, cur_write_cap, write_units))
+    else:
+        """ if action involved any decrements but we are not able to do it,
+            then keep only keep the incremental part.
+        """
+        logger.debug('>>>> reaching daliy scale down limit of {0}, | '
+                     'cur. reads {1} => {2} | cur. write {3} => {4}'.format(
+                         max_decreses_per_day, cur_reads_cap,
+                         read_units, cur_write_cap, write_units))
+        if (int(read_units) < cur_reads_cap): read_units = cur_reads_cap
+        if (int(write_units) < cur_write_cap): write_units = cur_write_cap
+    return read_units, write_units
 
 def get_gsi_status(table_name, gsi_name):
     """ Return the DynamoDB table
@@ -101,8 +140,7 @@ def get_gsi_status(table_name, gsi_name):
 
     for gsi in desc[u'Table'][u'GlobalSecondaryIndexes']:
         if gsi[u'IndexName'] == gsi_name:
-            return gsi[u'IndexStatus']
-
+            return gsi[u'IndexStatus'], gsi
 
 def get_provisioned_gsi_read_units(table_name, gsi_name):
     """ Returns the number of provisioned read units for the table
@@ -207,8 +245,7 @@ def get_table_status(table_name):
         desc = DYNAMODB_CONNECTION.describe_table(table_name)
     except JSONResponseError:
         raise
-
-    return desc[u'Table'][u'TableStatus']
+    return desc[u'Table'][u'TableStatus'], desc
 
 
 def list_tables():
