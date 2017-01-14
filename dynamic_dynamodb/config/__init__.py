@@ -3,6 +3,7 @@
 import sys
 from dynamic_dynamodb.config import config_file_parser
 from dynamic_dynamodb.config import command_line_parser
+from dynamic_dynamodb.statistics.table_metric_buffer import TableMetricBuffer
 
 try:
     from collections import OrderedDict as ordereddict
@@ -204,6 +205,9 @@ def get_configuration():
     __check_logging_rules(configuration)
     __check_table_rules(configuration)
 
+    # intialize table metric buffer map in configuration
+    __init_table_metric_buffer(configuration)
+
     return configuration
 
 
@@ -225,6 +229,9 @@ def __get_cmd_table_options(cmd_line_options):
 
     return options
 
+def __init_table_metric_buffer(configuration):
+    configuration['table_metric_buffer_dict'] = {}
+    return configuration
 
 def __get_config_table_options(conf_file_options):
     """ Get all table options from the config file

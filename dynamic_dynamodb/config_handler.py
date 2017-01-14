@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """ Configuration handler """
 import config
+from dynamic_dynamodb.statistics.table_metric_buffer import TableMetricBuffer
 
 CONFIGURATION = config.get_configuration()
-
 
 def get_configured_tables():
     """ Returns a list of all configured tables
@@ -26,6 +26,17 @@ def get_global_option(option):
     except KeyError:
         return None
 
+def get_table_metric_buffer(table_name, lookback_period):
+    """ returns an instance of TableMetricBuffer
+    """
+    try:
+        if (False == CONFIGURATION['table_metric_buffer_dict'].has_key(table_name)):
+            CONFIGURATION['table_metric_buffer_dict'][table_name] = \
+                TableMetricBuffer(int(lookback_period) * 60)
+        print CONFIGURATION['table_metric_buffer_dict'][table_name].to_dict()
+        return CONFIGURATION['table_metric_buffer_dict'][table_name]
+    except KeyError:
+        return None
 
 def get_gsi_option(table_key, gsi_key, option):
     """ Returns the value of the option

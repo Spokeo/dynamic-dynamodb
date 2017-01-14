@@ -13,7 +13,6 @@ from dynamic_dynamodb.aws.cloudwatch import (
 from dynamic_dynamodb.config_handler import get_global_option
 from boto.ec2 import cloudwatch
 
-
 from sys import stdin
 import dateutil.parser
 import json

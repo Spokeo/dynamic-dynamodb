@@ -7,7 +7,9 @@ from dynamic_dynamodb.aws import dynamodb, sns
 from dynamic_dynamodb.core import circuit_breaker
 from dynamic_dynamodb.statistics import table as table_stats
 from dynamic_dynamodb.log_handler import LOGGER as logger
-from dynamic_dynamodb.config_handler import get_table_option, get_global_option
+from dynamic_dynamodb.config_handler import get_table_option, \
+                                            get_global_option, \
+                                            get_table_metric_buffer
 
 
 def ensure_provisioning(
@@ -203,6 +205,17 @@ def __ensure_provisioning_reads(table_name, key_name, num_consec_read_checks):
             get_table_option(key_name, 'decrease_consumed_reads_with')
         decrease_consumed_reads_scale = \
             get_table_option(key_name, 'decrease_consumed_reads_scale')
+
+        table_metric_obj = get_table_metric_buffer(table_name, lookback_period)
+        print ">>>> log_current_read_throughput_stats"
+        if (None != table_metric_obj) :
+            table_metric_obj.log_current_read_throughput_stats(
+                int(current_read_units * table_metric_obj.get_sampling_window_in_sec()),
+                int(float(current_read_units * \
+                          consumed_read_units_percent *
+                          table_metric_obj.get_sampling_window_in_sec()) / 100.0),
+                throttled_read_count)
+
     except JSONResponseError:
         raise
     except BotoServerError:
@@ -586,6 +599,17 @@ def __ensure_provisioning_writes(
             get_table_option(key_name, 'decrease_consumed_writes_with')
         decrease_consumed_writes_scale = \
             get_table_option(key_name, 'decrease_consumed_writes_scale')
+
+        table_metric_obj = get_table_metric_buffer(table_name, lookback_period)
+        print ">>>> log_current_write_throughput_stats"
+        if (None != table_metric_obj) :
+            table_metric_obj.log_current_write_throughput_stats(
+                int(current_write_units * table_metric_obj.get_sampling_window_in_sec()),
+                int(float(current_write_units * \
+                          consumed_write_units_percent *
+                          table_metric_obj.get_sampling_window_in_sec()) / 100.0),
+                throttled_write_count)
+
     except JSONResponseError:
         raise
     except BotoServerError:
