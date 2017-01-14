@@ -405,6 +405,11 @@ def __ensure_provisioning_reads(table_name, key_name, num_consec_read_checks):
             update_needed = True
             updated_read_units = calculated_provisioning
 
+    is_weighted_adjust_needed = get_table_option(key_name, 'enable_weighted_read_autoscaling')
+    if ((True == is_weighted_adjust_needed) and (None != table_metric_obj)):
+        updated_read_units = \
+            table_metric_obj.check_and_calculate_weighted_read_units(updated_read_units)
+
     # Decrease needed due to low CU consumption
     if not update_needed:
         # If local/granular values not specified use global values
