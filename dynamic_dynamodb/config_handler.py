@@ -33,7 +33,7 @@ def get_table_metric_buffer(table_name, lookback_period):
         if (False == CONFIGURATION['table_metric_buffer_dict'].has_key(table_name)):
             CONFIGURATION['table_metric_buffer_dict'][table_name] = \
                 TableMetricBuffer(int(lookback_period) * 60)
-        print CONFIGURATION['table_metric_buffer_dict'][table_name].to_dict()
+        logger.debug(CONFIGURATION['table_metric_buffer_dict'][table_name].to_dict())
         return CONFIGURATION['table_metric_buffer_dict'][table_name]
     except KeyError:
         return None

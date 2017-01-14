@@ -207,7 +207,7 @@ def __ensure_provisioning_reads(table_name, key_name, num_consec_read_checks):
             get_table_option(key_name, 'decrease_consumed_reads_scale')
 
         table_metric_obj = get_table_metric_buffer(table_name, lookback_period)
-        print ">>>> log_current_read_throughput_stats"
+        logger.debug(">>>> log_current_read_throughput_stats")
         if (None != table_metric_obj) :
             table_metric_obj.log_current_read_throughput_stats(
                 int(current_read_units * table_metric_obj.get_sampling_window_in_sec()),
