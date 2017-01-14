@@ -37,6 +37,8 @@ DEFAULT_OPTIONS = {
     },
     'table': {
         'max_scale_down_ops_per_day': 4,
+        'enable_weighted_read_autoscaling': False,
+        'enable_weighted_write_autoscaling': False,
 
         'reads-upper-alarm-threshold': 0,
         'reads-lower-alarm-threshold': 0,

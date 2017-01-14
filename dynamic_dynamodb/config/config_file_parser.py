@@ -13,6 +13,16 @@ except ImportError:
     from ordereddict import OrderedDict as ordereddict
 
 TABLE_CONFIG_OPTIONS = [
+    {   'key': 'enable_weighted_read_autoscaling',
+        'option': 'enable-weighted-read-autoscaling',
+        'required': False,
+        'type': 'bool'
+    },
+    {   'key': 'enable_weighted_write_autoscaling',
+        'option': 'enable-weighted-write-autoscaling',
+        'required': False,
+        'type': 'bool'
+    },
     {
         'key': 'max_scale_down_ops_per_day',
         'option': 'max-scale-down-ops-per-day',
