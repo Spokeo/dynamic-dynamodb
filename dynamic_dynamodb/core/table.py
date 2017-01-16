@@ -805,6 +805,11 @@ def __ensure_provisioning_writes(
             update_needed = True
             updated_write_units = calculated_provisioning
 
+    is_weighted_adjust_needed = get_table_option(key_name, 'enable_weighted_write_autoscaling')
+    if ((True == is_weighted_adjust_needed) and (None != table_metric_obj)):
+        updated_write_units = \
+            table_metric_obj.check_and_calculate_weighted_write_units(updated_write_units)
+
     # Decrease needed due to low CU consumption
     if not update_needed:
         # If local/granular values not specified use global values
