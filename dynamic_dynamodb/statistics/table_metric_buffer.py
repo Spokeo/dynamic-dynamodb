@@ -1,5 +1,5 @@
 class TableMetricBuffer:
-    def __init__(self, sampling_window_in_sec = 60):
+    def __init__(self, sampling_window_in_sec = 60, table_name = ''):
         self.prev_throttled_reads_cnt = 0
         self.curr_throttled_reads_cnt = 0
         self.prev_provision_reads_cnt = 0
@@ -15,6 +15,7 @@ class TableMetricBuffer:
         self.curr_consuming_write_cnt = 0
 
         self.sampling_window_in_sec = sampling_window_in_sec
+        self.table_name = table_name
 
     def check_and_calc_weighted_units_when_throttle(self, curr_throttled_cnt, prev_throttled_cnt,
                                                           curr_consuming_cnt, prev_consuming_cnt,
@@ -25,7 +26,11 @@ class TableMetricBuffer:
                 float(throttle_events_delta) / float(prev_throttled_cnt + prev_consuming_cnt))
             current_units = curr_provision_cnt / self.sampling_window_in_sec
             target_units = int(current_units * (throttle_events_delta_to_total_req_ratio + 1.0))
-            if (target_units > updated_units): updated_units = target_units
+            if (target_units > updated_units):
+                logger.info(
+                    '{0} - Increasing units for extra throttle events from {1} to {2}'.format(
+                        self.table_name, updated_units, target_units))
+                updated_units = target_units
 
         return updated_units
 
