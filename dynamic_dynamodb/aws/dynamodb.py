@@ -97,7 +97,7 @@ def update_rate_by_check_scale_down_limits_per_day(read_units, write_units,
 
     """ short circuit if change is a pure incremental process.
     """
-    logger.debug('>>>> enter check limit, aleady down {0} times, limit is {1} | '
+    logger.info('>>>> enter check limit, aleady down {0} times, limit is {1} | '
                  'cur. reads {2} => {3} | cur. write {4} => {5}'.format(
                      num_of_decreses_today, max_decreses_per_day,
                      cur_reads_cap, read_units, cur_write_cap, write_units))
@@ -108,7 +108,7 @@ def update_rate_by_check_scale_down_limits_per_day(read_units, write_units,
         """ if action involved any decrements and we still be able to do it,
             then keep the plan as it is
         """
-        logger.debug('>>>> already down {0} times, limit is {1}, continue | '
+        logger.info('>>>> already down {0} times, limit is {1}, continue | '
                      'cur. reads {2} => {3} | cur. write {4} => {5}'.format(
                          num_of_decreses_today, max_decreses_per_day,
                          cur_reads_cap, read_units, cur_write_cap, write_units))
@@ -116,7 +116,7 @@ def update_rate_by_check_scale_down_limits_per_day(read_units, write_units,
         """ if action involved any decrements but we are not able to do it,
             then keep only keep the incremental part.
         """
-        logger.debug('>>>> reaching daliy scale down limit of {0}, | '
+        logger.info('>>>> reaching daliy scale down limit of {0}, | '
                      'cur. reads {1} => {2} | cur. write {3} => {4}'.format(
                          max_decreses_per_day, cur_reads_cap,
                          read_units, cur_write_cap, write_units))
